@@ -1,9 +1,9 @@
-import { VStream }  from '../src/VStream'
+import { Stream, combine2 }  from '../src/Stream'
 import { assert } from 'chai'
 
-describe('vstream', () => {
+describe('stream', () => {
   it('subscribe simple', () => {
-    const stream = new VStream<String | undefined>("")
+    const stream = new Stream<String|undefined>()
     let result: String | undefined = undefined
     let sub = stream.subscribe(false, v => { result = v })
     stream.trigger("ciao")
@@ -12,7 +12,6 @@ describe('vstream', () => {
     sub.dispose()
   })
 
-  /*
   it('unsubscribe simple', () => {
     const stream = new Stream<String | undefined>()
     let result: String | undefined = undefined
@@ -35,16 +34,16 @@ describe('vstream', () => {
 
   it('test last', () => {
     const stream = new Stream<String>()
-    stream.last(v => { assert.equal(v, undefined) })
+    stream.last(v => { assert.equal(v, undefined)} )
     stream.trigger("1")
     assert(stream.valuePresent)
     stream.last(v => { assert.equal(v, "1") })
   })
 
   it('test map', () => {
-    const stream = new Stream<number | undefined>()
+    const stream = new Stream<number|undefined>()
     stream.trigger(undefined)
-    let result: Array<String | undefined> = []
+    let result: Array<String|undefined> = []
     const sub = stream
       .map(v => (v || "undefined") + "")
       .map(v => (v || "undefined") + "")
@@ -75,7 +74,7 @@ describe('vstream', () => {
     const sub = stream.trigger(undefined)
       .fold(result, (a, b) => { return { first: a.second, second: b } })
       .subscribe(true, pair => result = pair)
-    assert.deepEqual({ first: undefined, second: undefined }, result)
+    assert.deepEqual({first: undefined, second: undefined}, result)
     stream.trigger("1")
     assert.deepEqual({ first: undefined, second: "1" }, result)
     stream.trigger("2")
@@ -91,7 +90,7 @@ describe('vstream', () => {
     const stream = new Stream<String>()
     let result: Array<String> = []
     stream.trigger("2").trigger("2")
-    const sub = stream.filter(v => v == "2").subscribe(false, v => result.push(v))
+    const sub = stream.filter( v => v == "2" ).subscribe(false, v => result.push(v))
     stream
       .trigger("1")
       .trigger("2").trigger("2")
@@ -99,11 +98,11 @@ describe('vstream', () => {
     assert.deepEqual(["2", "2"], result)
     sub.dispose()
   })
-*/
+
   it('test take', () => {
-    const stream = new VStream("2")
+    const stream = new Stream<String>()
     let result: Array<String> = []
-    stream.trigger("2")
+    stream.trigger("2").trigger("2")
     const sub = stream.take(3).subscribe(false, v => result.push(v))
     stream
       .trigger("1")
@@ -114,9 +113,9 @@ describe('vstream', () => {
   })
 
   it('test take 2', () => {
-    const stream = new VStream("2")
+    const stream = new Stream<String>()
     let result: Array<String> = []
-    stream.trigger("2")
+    stream.trigger("2").trigger("2")
     const sub = stream.take(3).subscribe(true, v => result.push(v))
     stream
       .trigger("1")
@@ -126,12 +125,47 @@ describe('vstream', () => {
     sub.dispose()
   })
 
+  it('test take many', () => {
+    const stream = new Stream<String>()
+    let result: Array<String> = []
+    stream.trigger("2").trigger("2")
+    const sub = stream.take(300).subscribe(true, v => result.push(v))
+    stream
+      .trigger("1")
+      .trigger("2").trigger("2")
+      .trigger("3").trigger("3").trigger("3")
+    assert.deepEqual(["2", "1", "2", "2", "3", "3", "3"], result)
+    sub.dispose()
+  })
+
+  it('combine2', () => {
+    const a = new Stream<String>()
+    const b = new Stream<String | undefined>()
+    let result: Array <[String, String | undefined]> = []
+    const sub = combine2(a, b)
+      .distinct(v => v.join(","))
+      .subscribe(false, v => result.push(v))
+    a.trigger("1")
+    b.trigger(undefined)
+    b.trigger("2")
+    a.trigger("2")
+    a.trigger("2")
+    a.dispose()
+    b.trigger("3")
+    assert.deepEqual([
+      ["1", undefined],
+      ["1", "2"],
+      ["2", "2"]
+    ], result)
+    sub.dispose()
+  })
+
 })
 
-describe('vstream', () => {
+describe('stream', () => {
 
   it('subscription', () => {
-    const stream = new VStream(0)
+    const stream = new Stream<number>()
     let results: Array<number> = []
     let sub = stream.subscribe(false, v => { results.push(v) })
     stream.trigger(1) 
@@ -141,7 +175,8 @@ describe('vstream', () => {
   })
 
   it('subscription replay', () => {
-    const stream = new VStream(0)
+    const stream = new Stream<number>()
+    stream.trigger(0)
     let results: Array<number> = []
     const sub = stream.subscribe(true, v => { results.push(v) })
     stream.trigger(1)
@@ -151,7 +186,8 @@ describe('vstream', () => {
   })
 
   it('subscription dispose', () => {
-    const stream = new VStream(0)
+    const stream = new Stream<number>()
+    stream.trigger(0)
     let results: Array<number> = []
     const sub = stream.subscribe(true, v => { results.push(v) })
     stream.trigger(1)
@@ -161,7 +197,7 @@ describe('vstream', () => {
   })
 
   it('wait for a value', async () => {
-    const stream = new VStream(0)
+    const stream = new Stream<number>()
     setTimeout(() => {
       stream.trigger(10)
       stream.dispose()
@@ -170,7 +206,7 @@ describe('vstream', () => {
   })
 
   it('wait for current value', async () => {
-    const stream = new VStream(0)
+    const stream = new Stream<number>()
     await stream.wait(true, v => v == 0)
   })
 
