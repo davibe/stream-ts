@@ -1,5 +1,5 @@
 
-interface Disposable {
+export interface Disposable {
   dispose() : void
 }
 const disposableFunc = (fn: () => void) : Disposable => {
@@ -96,13 +96,6 @@ export class VStream<T> implements Disposable {
       })
     )
     return stream
-  }
-
-  // deprecated
-  subscribeUntil(replay: Boolean, handler: (T) => Boolean) {
-    const sub = this.subscribe(replay, val => {
-      if (!handler(val)) { sub.dispose() }
-    })
   }
 
   wait = (replay: Boolean = true, handler: (value: T) => Boolean): Promise<void> => {
