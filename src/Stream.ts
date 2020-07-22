@@ -100,10 +100,10 @@ export class Stream<T> implements Disposable {
     return stream
   }
 
-  wait = (replay: Boolean = true, handler: (value: T) => Boolean): Promise<void> => {
+  wait = (replay: Boolean = true, handler: (value: T) => Boolean): Promise<T> => {
     return new Promise((resolve, reject) => {
       this.subscribe(replay, v => {
-        if (handler(v)) { resolve() }
+        if (handler(v)) { resolve(v) }
       })
       this.disposables.push(disposableFunc(() => {
         reject()

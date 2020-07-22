@@ -206,7 +206,7 @@ describe('stream', () => {
   })
 
   it('wait for current value', async () => {
-    const stream = new Stream<number>()
+    const stream = new Stream<number>().trigger(0)
     await stream.wait(true, v => v == 0)
   })
 

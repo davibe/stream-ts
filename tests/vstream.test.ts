@@ -1,4 +1,4 @@
-import { VStream }  from '../src/VStream'
+import { VStream } from '../src/VStream'
 import { assert } from 'chai'
 
 describe('vstream', () => {
@@ -12,38 +12,29 @@ describe('vstream', () => {
     sub.dispose()
   })
 
-  /*
   it('unsubscribe simple', () => {
-    const stream = new Stream<String | undefined>()
+    const stream = new VStream<String | undefined>(undefined)
     let result: String | undefined = undefined
     let sub = stream.subscribe(false, v => { result = v })
-    stream.trigger("ciao")
+    stream.update("ciao")
     stream.unsubscribe(sub)
-    stream.trigger("mondo")
+    stream.update("mondo")
     assert.deepEqual(result, "ciao")
     sub.dispose()
   })
 
-  it('test no value', () => {
-    const stream = new Stream<undefined>()
-    let called = false
-    let sub = stream.subscribe(false, v => { called = true })
-    stream.trigger(undefined)
-    assert(called)
-    sub.dispose()
-  })
 
   it('test last', () => {
-    const stream = new Stream<String>()
-    stream.last(v => { assert.equal(v, undefined) })
-    stream.trigger("1")
-    assert(stream.valuePresent)
-    stream.last(v => { assert.equal(v, "1") })
+    const stream = new VStream<String>("")
+    assert.equal(stream.value, "")
+    stream.update("1")
+    assert(stream.value)
+    assert.equal(stream.value, "1")
   })
 
   it('test map', () => {
-    const stream = new Stream<number | undefined>()
-    stream.trigger(undefined)
+    const stream = new VStream<number | undefined>(undefined)
+    stream.update(undefined)
     let result: Array<String | undefined> = []
     const sub = stream
       .map(v => (v || "undefined") + "")
@@ -52,63 +43,92 @@ describe('vstream', () => {
       .map(v => (v || "undefined") + "")
       .map(v => (v || "undefined") + "")
       .subscribe(true, v => result.push(v))
-    stream.trigger(1).trigger(2)
+    stream.update(1).update(2)
     assert.deepEqual(["undefined", "1", "2"], result)
     sub.dispose()
   })
 
   it('test distinct', () => {
-    const stream = new Stream<String>()
+    const stream = new VStream<String>("")
     let result: Array<String> = []
-    const sub = stream.distinctSimple().subscribe(true, v => result.push(v))
+    const sub = stream.distinctSimple().subscribe(false, v => result.push(v))
     stream
-      .trigger("1")
-      .trigger("2").trigger("2")
-      .trigger("3").trigger("3").trigger("3")
+      .update("")
+      .update("1")
+      .update("2").update("2")
+      .update("3").update("3").update("3")
     assert.deepEqual(["1", "2", "3"], result)
     sub.dispose()
   })
 
+  it('test distinct with replay', () => {
+    const stream = new VStream<String>("")
+    let result: Array<String> = []
+    const sub = stream.distinctSimple().subscribe(true, v => result.push(v))
+    stream
+      .update("")
+      .update("1")
+      .update("2").update("2")
+      .update("3").update("3").update("3")
+    assert.deepEqual(["", "1", "2", "3"], result)
+    sub.dispose()
+  })
+
   it('test fold', () => {
-    const stream = new Stream<String | undefined>()
+    const stream = new VStream<String | undefined>(undefined)
     let result: { first: String | undefined, second: String | undefined } = { first: undefined, second: undefined }
-    const sub = stream.trigger(undefined)
+    const sub = stream.update(undefined)
       .fold(result, (a, b) => { return { first: a.second, second: b } })
       .subscribe(true, pair => result = pair)
     assert.deepEqual({ first: undefined, second: undefined }, result)
-    stream.trigger("1")
+    stream.update("1")
     assert.deepEqual({ first: undefined, second: "1" }, result)
-    stream.trigger("2")
+    stream.update("2")
     assert.deepEqual({ first: "1", second: "2" }, result)
-    stream.trigger("3")
+    stream.update("3")
     assert.deepEqual({ first: "2", second: "3" }, result)
-    stream.trigger(undefined)
+    stream.update(undefined)
     assert.deepEqual({ first: "3", second: undefined }, result)
     sub.dispose()
   })
 
   it('test filter', () => {
-    const stream = new Stream<String>()
+    const stream = new VStream<String>("")
     let result: Array<String> = []
-    stream.trigger("2").trigger("2")
+    stream.update("2").update("2")
     const sub = stream.filter(v => v == "2").subscribe(false, v => result.push(v))
     stream
-      .trigger("1")
-      .trigger("2").trigger("2")
-      .trigger("3").trigger("3").trigger("3")
+      .update("1")
+      .update("2").update("2")
+      .update("3").update("3").update("3")
     assert.deepEqual(["2", "2"], result)
     sub.dispose()
   })
-*/
+
+  it('test filter with replay', () => {
+    const stream = new VStream<String>("")
+    let result: Array<String> = []
+    stream.update("2").update("-1")
+    const sub = stream.filter(v => v == "2").subscribe(true, v => result.push(v))
+    stream
+      .update("1")
+      .update("2").update("2")
+      .update("3").update("3").update("3")
+    // filter cannot filter the "current" value
+    // therefore it will be replayed if requested ("-1" in this case)
+    assert.deepEqual(["-1", "2", "2"], result)
+    sub.dispose()
+  })
+
   it('test take', () => {
     const stream = new VStream("2")
     let result: Array<String> = []
-    stream.trigger("2")
+    stream.update("2")
     const sub = stream.take(3).subscribe(false, v => result.push(v))
     stream
-      .trigger("1")
-      .trigger("2").trigger("2")
-      .trigger("3").trigger("3").trigger("3")
+      .update("1")
+      .update("2").update("2")
+      .update("3").update("3").update("3")
     assert.deepEqual(["1", "2", "2"], result)
     sub.dispose()
   })
@@ -116,12 +136,12 @@ describe('vstream', () => {
   it('test take 2', () => {
     const stream = new VStream("2")
     let result: Array<String> = []
-    stream.trigger("2")
+    stream.update("2")
     const sub = stream.take(3).subscribe(true, v => result.push(v))
     stream
-      .trigger("1")
-      .trigger("2").trigger("2")
-      .trigger("3").trigger("3").trigger("3")
+      .update("1")
+      .update("2").update("2")
+      .update("3").update("3").update("3")
     assert.deepEqual(["2", "1", "2", "2"], result)
     sub.dispose()
   })
@@ -134,8 +154,8 @@ describe('vstream', () => {
     const stream = new VStream(0)
     let results: Array<number> = []
     let sub = stream.subscribe(false, v => { results.push(v) })
-    stream.trigger(1) 
-    stream.trigger(2)
+    stream.update(1)
+    stream.update(2)
     assert.deepEqual(results, [1, 2])
     sub.dispose()
   })
@@ -144,8 +164,8 @@ describe('vstream', () => {
     const stream = new VStream(0)
     let results: Array<number> = []
     const sub = stream.subscribe(true, v => { results.push(v) })
-    stream.trigger(1)
-    stream.trigger(2)
+    stream.update(1)
+    stream.update(2)
     assert.deepEqual(results, [0, 1, 2])
     sub.dispose()
   })
@@ -154,16 +174,16 @@ describe('vstream', () => {
     const stream = new VStream(0)
     let results: Array<number> = []
     const sub = stream.subscribe(true, v => { results.push(v) })
-    stream.trigger(1)
+    stream.update(1)
     sub.dispose()
-    stream.trigger(2)
+    stream.update(2)
     assert.deepEqual(results, [0, 1])
   })
 
   it('wait for a value', async () => {
     const stream = new VStream(0)
     setTimeout(() => {
-      stream.trigger(10)
+      stream.update(10)
       stream.dispose()
     }, 10)
     await stream.wait(false, v => v == 10)
