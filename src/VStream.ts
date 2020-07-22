@@ -2,7 +2,7 @@
 export interface Disposable {
   dispose(): void
 }
-export const disposableFunc = (fn: () => void): Disposable => {
+export const disposableFunc = (fn: () => any): Disposable => {
   return new class implements Disposable {
     dispose = () => { fn() }
   }
@@ -11,7 +11,7 @@ export const disposableFunc = (fn: () => void): Disposable => {
 
 export class VStream<T> implements Disposable {
   private subscriptions: Array<Subscription<T>> = []
-  private disposables: Array<Disposable> = []
+  public disposables: Array<Disposable> = []
 
   constructor(public value: T) {
     this.value = value
@@ -133,4 +133,42 @@ class Subscription<T> implements Disposable {
     this.stream = undefined
     this.handler = () => { }
   }
+}
+
+// let it be dragons (having separate combine* fn is needed for typesafety)
+
+export const combine2 = <A, B>(a: VStream<A>, b: VStream<B>): VStream<[A, B]> => {
+  const stream = new VStream<[A, B]>([a.value, b.value])
+  const update = (): void => {
+    stream.update([a.value, b.value])
+  }
+  const combinedStreams = [a, b]
+  // destroying when all parents die
+  var count = 2
+  const dispose = () => --count === 0 && stream.dispose();
+  combinedStreams.map(s => {
+    stream.disposables.push(s.subscribe(false, update))
+    s.disposables.push(disposableFunc(dispose))
+  })
+  return stream
+}
+
+export const combine3 = <A, B, C>(
+  a: VStream<A>, 
+  b: VStream<B>,
+  c: VStream<C>
+): VStream<[A, B, C]> => {
+  const stream = new VStream<[A, B, C]>([a.value, b.value, c.value])
+  const update = (): void => {
+    stream.update([a.value, b.value, c.value])
+  }
+  const combinedStreams = [a, b, c]
+  // destroying when all parents die
+  var count = 2
+  const dispose = () => --count === 0 && stream.dispose();
+  combinedStreams.map(s => {
+    stream.disposables.push(s.subscribe(false, update))
+    s.disposables.push(disposableFunc(dispose))
+  })
+  return stream
 }
