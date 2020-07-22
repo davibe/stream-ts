@@ -1,8 +1,8 @@
 
 export interface Disposable {
-  dispose() : void
+  dispose(): void
 }
-const disposableFunc = (fn: () => void) : Disposable => {
+export const disposableFunc = (fn: () => void): Disposable => {
   return new class implements Disposable {
     dispose = () => { fn() }
   }
@@ -17,7 +17,7 @@ export class VStream<T> implements Disposable {
     this.value = value
   }
 
-  subscribe = (replay: Boolean = false, handler: (value: T) => void) : Subscription<T> => {
+  subscribe = (replay: Boolean = false, handler: (value: T) => void): Subscription<T> => {
     const sub = new Subscription<T>(this, handler)
     this.subscriptions.push(sub)
     if (replay) {
@@ -30,7 +30,7 @@ export class VStream<T> implements Disposable {
     this.subscriptions = this.subscriptions.filter(s => s != sub)
   }
 
-  trigger = (value: T) : VStream<T> => {
+  update = (value: T): VStream<T> => {
     this.value = value
     this.subscriptions.forEach(sub => sub.handler(value))
     return this
@@ -39,7 +39,7 @@ export class VStream<T> implements Disposable {
   map = <U>(transform: (value: T) => U): VStream<U> => {
     const stream = new VStream(transform(this.value))
     stream.disposables.push(
-      this.subscribe(true, v => stream.trigger(transform(v)))
+      this.subscribe(true, v => stream.update(transform(v)))
     )
     return stream
   }
@@ -53,7 +53,7 @@ export class VStream<T> implements Disposable {
     stream.disposables.push(
       this.subscribe(true, v => {
         if (f(stream.value) != f(v)) {
-          stream.trigger(v)
+          stream.update(v)
         }
       })
     )
@@ -76,7 +76,7 @@ export class VStream<T> implements Disposable {
   filter = (f: (value: T) => Boolean): VStream<T> => {
     const stream = new VStream(this.value)
     stream.disposables.push(
-      this.subscribe(true, v => { if (f(v)) { stream.trigger(v) } })
+      this.subscribe(true, v => { if (f(v)) { stream.update(v) } })
     )
     return stream
   }
@@ -88,7 +88,7 @@ export class VStream<T> implements Disposable {
     stream.disposables.push(
       this.subscribe(true, v => {
         if (count <= amount) {
-          stream.trigger(v)
+          stream.update(v)
           count += 1
         } else {
           stream.dispose()
@@ -108,7 +108,7 @@ export class VStream<T> implements Disposable {
       }))
     })
   }
-  
+
   dispose = () => {
     this.subscriptions.forEach(s => s.dispose())
     this.subscriptions = []
@@ -131,6 +131,6 @@ class Subscription<T> implements Disposable {
     if (this.stream == undefined) { return }
     this.stream.unsubscribe(this)
     this.stream = undefined
-    this.handler = () => {}
+    this.handler = () => { }
   }
 }

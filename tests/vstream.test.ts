@@ -6,8 +6,8 @@ describe('vstream', () => {
     const stream = new VStream<String | undefined>("")
     let result: String | undefined = undefined
     let sub = stream.subscribe(false, v => { result = v })
-    stream.trigger("ciao")
-    stream.trigger("mondo")
+    stream.update("ciao")
+    stream.update("mondo")
     assert.deepEqual(result, "mondo")
     sub.dispose()
   })
