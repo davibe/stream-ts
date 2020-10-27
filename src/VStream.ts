@@ -137,11 +137,11 @@ class Subscription<T> implements Disposable {
 
 // let it be dragons
 
-export function combine<A, B>(args: [VStream<A>, VStream<B>]): VStream<[A, B]>
-export function combine<A, B, C>(args: [VStream<A>, VStream<B>, VStream<C>]): VStream<[A, B, C]>
-export function combine<A, B, C, D>(args: [VStream<A>, VStream<B>, VStream<C>, VStream<D>]): VStream<[A, B, C, D]>
-export function combine<A, B, C, D, E>(args: [VStream<A>, VStream<B>, VStream<C>, VStream<D>, VStream<E>]): VStream<[A, B, C, D, E]>
-export function combine<A, B, C, D, E, F>(args: [VStream<A>, VStream<B>, VStream<C>, VStream<D>, VStream<E>, VStream<F>]): VStream<[A, B, C, D, E, F]>
+export function combine<A, B>(streams: [VStream<A>, VStream<B>]): VStream<[A, B]>
+export function combine<A, B, C>(streams: [VStream<A>, VStream<B>, VStream<C>]): VStream<[A, B, C]>
+export function combine<A, B, C, D>(streams: [VStream<A>, VStream<B>, VStream<C>, VStream<D>]): VStream<[A, B, C, D]>
+export function combine<A, B, C, D, E>(streams: [VStream<A>, VStream<B>, VStream<C>, VStream<D>, VStream<E>]): VStream<[A, B, C, D, E]>
+export function combine<A, B, C, D, E, F>(streams: [VStream<A>, VStream<B>, VStream<C>, VStream<D>, VStream<E>, VStream<F>]): VStream<[A, B, C, D, E, F]>
 
 // this is type-unsafe but typesafety is ensured above :)
 export function combine(streams: any[]): VStream<any[]> {
