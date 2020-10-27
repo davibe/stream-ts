@@ -1,6 +1,6 @@
 import { VStream } from '../src/VStream'
 import { assert } from 'chai'
-import { combine2 } from '../src/VStream'
+import { combine } from '../src/VStream'
 
 describe('vstream', () => {
   it('subscribe simple', () => {
@@ -198,7 +198,7 @@ describe('vstream', () => {
   it('combine 2 values', async () => {
     const stream1 = new VStream(0)
     const stream2 = new VStream("0")
-    const stream = combine2(stream1, stream2)
+    const stream = combine([stream1, stream2])
     assert.deepEqual(stream.value, [0, "0"])
     const result: [number, string][] = []
     stream.subscribe(true, (v) => result.push(v))

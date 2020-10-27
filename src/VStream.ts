@@ -135,36 +135,23 @@ class Subscription<T> implements Disposable {
   }
 }
 
-// let it be dragons (having separate combine* fn is needed for typesafety)
+// let it be dragons
 
-export const combine2 = <A, B>(a: VStream<A>, b: VStream<B>): VStream<[A, B]> => {
-  const stream = new VStream<[A, B]>([a.value, b.value])
-  const update = (): void => {
-    stream.update([a.value, b.value])
-  }
-  const combinedStreams = [a, b]
-  // destroying when all parents die
-  var count = 2
-  const dispose = () => --count === 0 && stream.dispose();
-  combinedStreams.map(s => {
-    stream.disposables.push(s.subscribe(false, update))
-    s.disposables.push(disposableFunc(dispose))
-  })
-  return stream
-}
+export function combine<A, B>(args: [VStream<A>, VStream<B>]): VStream<[A, B]>
+export function combine<A, B, C>(args: [VStream<A>, VStream<B>, VStream<C>]): VStream<[A, B, C]>
+export function combine<A, B, C, D>(args: [VStream<A>, VStream<B>, VStream<C>, VStream<D>]): VStream<[A, B, C, D]>
+export function combine<A, B, C, D, E>(args: [VStream<A>, VStream<B>, VStream<C>, VStream<D>, VStream<E>]): VStream<[A, B, C, D, E]>
+export function combine<A, B, C, D, E, F>(args: [VStream<A>, VStream<B>, VStream<C>, VStream<D>, VStream<E>, VStream<F>]): VStream<[A, B, C, D, E, F]>
 
-export const combine3 = <A, B, C>(
-  a: VStream<A>, 
-  b: VStream<B>,
-  c: VStream<C>
-): VStream<[A, B, C]> => {
-  const stream = new VStream<[A, B, C]>([a.value, b.value, c.value])
+// this is type-unsafe but typesafety is ensured above :)
+export function combine(streams: any[]): VStream<any[]> {
+  const stream = new VStream(streams.map(v => v.value))
   const update = (): void => {
-    stream.update([a.value, b.value, c.value])
+    stream.update(streams.map(v => v.value))
   }
-  const combinedStreams = [a, b, c]
+  const combinedStreams = streams
   // destroying when all parents die
-  var count = 2
+  var count = streams.length
   const dispose = () => --count === 0 && stream.dispose();
   combinedStreams.map(s => {
     stream.disposables.push(s.subscribe(false, update))
