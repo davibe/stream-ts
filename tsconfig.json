@@ -6,6 +6,8 @@
     "sourceMap": true,
     "declaration": true,
     "strictNullChecks": true,
+    "strict": true,
+    "strictFunctionTypes": false,
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,

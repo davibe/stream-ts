@@ -12,7 +12,7 @@ const disposableFunc = (fn: () => void): Disposable => {
 export class Stream<T> implements Disposable {
   private subscriptions: Array<Subscription<T>> = []
   public disposables: Array<Disposable> = []
-  private value: T
+  private value: T | undefined = undefined
   valuePresent: Boolean = false
 
   constructor() { }
@@ -21,7 +21,7 @@ export class Stream<T> implements Disposable {
     const sub = new Subscription<T>(this, handler)
     this.subscriptions.push(sub)
     if (replay && this.valuePresent) {
-      handler(this.value)
+      handler(this.value!)
     }
     return sub
   }
@@ -38,7 +38,7 @@ export class Stream<T> implements Disposable {
   }
 
   last = (fn: (value: T) => void) => {
-    if (this.valuePresent) { fn(this.value) }
+    if (this.valuePresent) { fn(this.value!) }
   }
 
   map = <U>(transform: (value: T) => U): Stream<U> => {
@@ -58,7 +58,7 @@ export class Stream<T> implements Disposable {
     var waitingFirstValue = !this.valuePresent
     stream.disposables.push(
       this.subscribe(true, v => {
-        if (waitingFirstValue || f(stream.value) != f(v)) {
+        if (waitingFirstValue || f(stream.value!) != f(v)) {
           stream.trigger(v)
           waitingFirstValue = false
         }
@@ -151,7 +151,7 @@ export function combine(streams: any[]): Stream<any[]> {
   const stream = new Stream<any[]>()
   const trigger = (): void => {
     const values: any[] = []
-    streams.forEach(s => s.last(v => values.push(v)))
+    streams.forEach(s => s.last((v: any) => values.push(v)))
     if (values.length == streams.length) {
       stream.trigger(values)
     }
