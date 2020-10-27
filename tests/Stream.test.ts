@@ -1,4 +1,4 @@
-import { Stream, combine2 }  from '../src/Stream'
+import { Stream, combine }  from '../src/Stream'
 import { assert } from 'chai'
 
 describe('stream', () => {
@@ -142,7 +142,7 @@ describe('stream', () => {
     const a = new Stream<String>()
     const b = new Stream<String | undefined>()
     let result: Array <[String, String | undefined]> = []
-    const sub = combine2(a, b)
+    const sub = combine([a, b])
       .distinct(v => v.join(","))
       .subscribe(false, v => result.push(v))
     a.trigger("1")

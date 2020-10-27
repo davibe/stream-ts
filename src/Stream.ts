@@ -138,24 +138,31 @@ class Subscription<T> implements Disposable {
   }
 }
 
-export const combine2 = <A, B>(a: Stream <A>, b: Stream<B>): Stream<[A, B]> => {
-  const stream = new Stream<[A, B]>()
+// let it be dragons
+
+export function combine<A, B>(streams: [Stream<A>, Stream<B>]): Stream<[A, B]>
+export function combine<A, B, C>(streams: [Stream<A>, Stream<B>, Stream<C>]): Stream<[A, B, C]>
+export function combine<A, B, C, D>(streams: [Stream<A>, Stream<B>, Stream<C>, Stream<D>]): Stream<[A, B, C, D]>
+export function combine<A, B, C, D, E>(streams: [Stream<A>, Stream<B>, Stream<C>, Stream<D>, Stream<E>]): Stream<[A, B, C, D, E]>
+export function combine<A, B, C, D, E, F>(streams: [Stream<A>, Stream<B>, Stream<C>, Stream<D>, Stream<E>, Stream<F>]): Stream<[A, B, C, D, E, F]>
+
+// this is type-unsafe but typesafety is ensured above :)
+export function combine(streams: any[]): Stream<any[]> {
+  const stream = new Stream<any[]>()
   const trigger = (): void => {
-    a.last(va => {
-      b.last(vb => {
-        stream.trigger([va, vb])
-      })
-    })
+    const values: any[] = []
+    streams.forEach(s => s.last(v => values.push(v)))
+    if (values.length == streams.length) {
+      stream.trigger(values)
+    }
   }
-  stream.disposables.push(a.subscribe(true, v => trigger()))
-  stream.disposables.push(b.subscribe(true, v => trigger()))
+  const combinedStreams = streams
   // destroying when all parents die
-  var count = 2
-  const dispose = (): void => {
-    count -= 1
-    if (count == 0) { stream.dispose() }
-  }
-  a.disposables.push(disposableFunc(dispose))
-  b.disposables.push(disposableFunc(dispose))
+  var count = streams.length
+  const dispose = () => --count === 0 && stream.dispose();
+  combinedStreams.map(s => {
+    stream.disposables.push(s.subscribe(true, trigger))
+    s.disposables.push(disposableFunc(dispose))
+  })
   return stream
 }
